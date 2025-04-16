@@ -1,16 +1,81 @@
 #include "ej1.h"
 
-string_proc_list* string_proc_list_create(void){
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+
+
+string_proc_list* string_proc_list_create(void) {
+    string_proc_list* list = malloc(sizeof(string_proc_list));
+    if (list) {
+        list->first = NULL;
+        list->last = NULL;
+    }
+    return list;
 }
 
-string_proc_node* string_proc_node_create(uint8_t type, char* hash){
+string_proc_node* string_proc_node_create(uint8_t type, char* hash) {
+    string_proc_node* node = malloc(sizeof(string_proc_node));
+    if (node) {
+        node->type = type;
+        node->hash = hash;      // No copiamos el hash, simplemente apuntamos.
+        node->next = NULL;
+        node->previous = NULL;
+    }
+    return node;
 }
 
-void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash){
+void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash) {
+    if (!list) return;
+
+    string_proc_node* new_node = string_proc_node_create(type, hash);
+    if (!new_node) return;
+
+    if (list->last == NULL) {
+        // Lista vacía
+        list->first = new_node;
+        list->last = new_node;
+    } else {
+        // Lista con elementos
+        new_node->previous = list->last;
+        list->last->next = new_node;
+        list->last = new_node;
+    }
 }
 
-char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash){
+char* string_proc_list_concat(string_proc_list* list, uint8_t type, char* hash) {
+    if (!list || !hash) return NULL;
+
+    // Primero calculamos el tamaño total necesario
+    size_t total_length = strlen(hash);
+    string_proc_node* current = list->first;
+
+    while (current) {
+        if (current->type == type && current->hash) {
+            total_length += strlen(current->hash);
+        }
+        current = current->next;
+    }
+
+    // Reservamos memoria para el string resultante (+1 para el null terminator)
+    char* result = malloc(total_length + 1);
+    if (!result) return NULL;
+
+    // Comenzamos copiando el hash recibido
+    strcpy(result, hash);
+
+    // Concatenamos los hashes de los nodos del mismo tipo
+    current = list->first;
+    while (current) {
+        if (current->type == type && current->hash) {
+            strcat(result, current->hash);
+        }
+        current = current->next;
+    }
+
+    return result;
 }
+
 
 
 /** AUX FUNCTIONS **/
