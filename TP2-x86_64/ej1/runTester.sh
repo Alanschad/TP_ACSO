@@ -13,7 +13,7 @@ fi
 echo " "
 echo "**Corriendo diferencias con la catedra"
 
-DIFFER="diff -wB"
+DIFFER="diff -d"
 ERRORDIFF=0
 
 ./tester
