@@ -9,6 +9,8 @@ SRC = thread-pool.cc Semaphore.cc main.cc
 # Link the target with object files
 $(TARGET): $(SRC)
 	$(CXX) $(CXXFLAGS) -o $@ $^
+custom:
+	$(CXX) $(CXXFLAGS) -o $(TARGET) thread-pool.cc Semaphore.cc test_custom.cc
 
 # Clean up build artifacts
 clean:
