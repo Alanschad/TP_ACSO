@@ -1,45 +1,51 @@
-// thread-pool.h
-#ifndef _thread_pool_
-#define _thread_pool_
+#ifndef THREAD_POOL_H
+#define THREAD_POOL_H
 
-#include <cstddef>
-#include <functional>
-#include <thread>
 #include <vector>
+#include <thread>
 #include <queue>
 #include <mutex>
 #include <condition_variable>
-#include "Semaphore.h"
-
-using namespace std;
-
-typedef struct worker {
-    thread ts;
-} worker_t;
+#include <functional>
+#include <atomic>
+#include "Semaphore.h"  
 
 class ThreadPool {
-  public:
-    ThreadPool(size_t numThreads);
-    void schedule(const function<void(void)>& thunk);
-    void wait();
+public:
+    explicit ThreadPool(size_t numThreads);
     ~ThreadPool();
-    
-  private:
-    void workerLoop(); 
 
-    vector<thread> workers;
-    queue<function<void(void)>> taskQueue;
+    void schedule(const std::function<void(void)>& thunk);
+    void wait();
 
-    mutex queueLock;
-    condition_variable cv_task;
-    condition_variable cv_wait;
+    ThreadPool(const ThreadPool&) = delete;
+    ThreadPool& operator=(const ThreadPool&) = delete;
+
+private:
+    void dispatcher();
+    void worker(size_t id);
+
+    struct Worker {
+        std::thread ts;
+        std::function<void(void)> task;
+        std::mutex taskMutex;
+        Semaphore readySem{0};
+        bool busy = false;
+    };
 
     size_t numThreads;
-    size_t workingThreads = 0;
-    bool shuttingDown = false;
+    std::vector<Worker> wts;
 
-    ThreadPool(const ThreadPool& original) = delete;
-    ThreadPool& operator=(const ThreadPool& rhs) = delete;
+    std::queue<std::function<void(void)>> taskQueue;
+    std::thread dt;
+
+    std::mutex mutex;
+    std::condition_variable cv;
+    std::condition_variable allDone;
+
+    std::atomic<bool> shutdown{false};
+    std::atomic<int> tasksInProgress{0};
 };
 
 #endif
+
