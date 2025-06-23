@@ -3,12 +3,12 @@
 
 #include <vector>
 #include <thread>
-#include <queue>
 #include <mutex>
-#include <condition_variable>
+#include <queue>
 #include <functional>
+#include <condition_variable>
 #include <atomic>
-#include "Semaphore.h"  
+#include "Semaphore.h"
 
 class ThreadPool {
 public:
@@ -27,25 +27,35 @@ private:
 
     struct Worker {
         std::thread ts;
-        std::function<void(void)> task;
+        std::function<void()> task;
         std::mutex taskMutex;
         Semaphore readySem{0};
-        bool busy = false;
+        bool available = true;
     };
 
     size_t numThreads;
     std::vector<Worker> wts;
 
-    std::queue<std::function<void(void)>> taskQueue;
     std::thread dt;
 
+    std::queue<std::function<void(void)>> taskQueue;
     std::mutex mutex;
-    std::condition_variable cv;
     std::condition_variable allDone;
 
-    std::atomic<bool> shutdown{false};
+    std::queue<size_t> availableWorkersQueue;
+    std::mutex availableWorkersMutex;
+
+    Semaphore tasksAvailable{0};
+    Semaphore workersAvailable{0};
+
     std::atomic<int> tasksInProgress{0};
+    std::atomic<bool> shutdown{false};
+    std::atomic<bool> acceptingTasks{true};
 };
 
 #endif
+
+
+
+
 
